@@ -546,21 +546,18 @@ if uploaded_file is not None:
 
     #chat Summary
 
-    import textwrap
-
-    # Chat Summary with Transformer-based Summarization
-    # Chat Summary with Sumy Summarization (No PyTorch/TensorFlow needed)
+   # Chat Summary with Point-wise Formatting
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
 
         if not filtered_df.empty:
             chat_text = " ".join(filtered_df['message']).replace("<Media omitted>", "").replace("This message was deleted", "")
 
-            # ✅ **Use Sumy (TextRank) for Summarization**
+            # ✅ **Summarization using Sumy (TextRank)**
             parser = PlaintextParser.from_string(chat_text, Tokenizer("english"))
             summarizer = TextRankSummarizer()
-            summary_sentences = summarizer(parser.document, 5)  # Get top 5 key sentences
-            final_summary = " ".join(str(sentence) for sentence in summary_sentences)
+            summary_sentences = summarizer(parser.document, 5)
+            final_summary = "\n".join(f"- {str(sentence)}" for sentence in summary_sentences)
 
             # ✅ **Extract Key Topics using RAKE**
             rake = Rake()
@@ -574,21 +571,21 @@ if uploaded_file is not None:
             neg_pct = round((sum(1 for score in sentiment_scores if score < -0.2) / len(sentiment_scores)) * 100, 1)
             neu_pct = 100 - pos_pct - neg_pct
 
-            # ✅ **Format Summary Output**
+            # ✅ **Format Summary Output (Point-wise)**
             formatted_summary = f"""
-            📌 **Key Topics Discussed**
-            {chr(10).join(f"- {topic}" for topic in keywords)}
+    📌 **Key Topics Discussed**
+    {chr(10).join(f"- {topic}" for topic in keywords)}
 
-            📝 **Chat Summary**
-            {final_summary}
+    📝 **Chat Summary (Point-wise)**
+    {final_summary}
 
-            📢 **Sentiment Summary**
-            - ✅ **Positive Chat:** {pos_pct}%
-            - ❌ **Negative Chat:** {neg_pct}%
-            - ➖ **Neutral Chat:** {neu_pct}%
+    📢 **Sentiment Summary**
+    - ✅ **Positive Chat:** {pos_pct}%
+    - ❌ **Negative Chat:** {neg_pct}%
+    - ➖ **Neutral Chat:** {neu_pct}%
 
-            📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if pos_pct > neg_pct else "**Mixed / Slightly Negative 😐**"}
-            """
+    📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if pos_pct > neg_pct else "**Mixed / Slightly Negative 😐**"}
+    """
 
             st.title(":blue[Chat Summary]")
             st.markdown(formatted_summary, unsafe_allow_html=True)
