@@ -236,7 +236,7 @@ if uploaded_file is not None:
             # Extract keywords using RAKE (Filter out garbage text)
             rake = Rake()
             rake.extract_keywords_from_text(chat_text)
-            keywords = [kw for kw in rake.get_ranked_phrases() if len(kw) > 3][:5]  # Remove short/random words
+            keywords = [kw for kw in rake.get_ranked_phrases() if len(kw.split()) > 1][:5]  # Remove single-character words
 
             # Extract Links Separately
             links = [msg for msg in filtered_df['message'] if "http" in msg]
@@ -251,34 +251,58 @@ if uploaded_file is not None:
 
             # Categorizing Messages
             fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg][:5]
-            important_conversations = filtered_df.head(5)[['date', 'message']].values.tolist()  # First 5 important messages
+            important_conversations = filtered_df[['date', 'message']].values.tolist()[:5]  # First 5 important messages
 
+            # Properly formatting important conversations
+            formatted_conversations = "\n".join(
+                f"- 📅 *[{date.strftime('%I:%M %p') if hasattr(date, 'strftime') else date}]* {msg}" for date, msg in important_conversations
+            )
+
+            # Properly formatting fun messages
+            formatted_fun_talks = "\n".join(f"- {msg}" for msg in fun_messages)
+
+            # Properly formatting links with labels
+            formatted_links = ""
+            for link in unique_links[:3]:  # Limit to 3 links
+                if "youtube" in link:
+                    formatted_links += f"- 🎓 **YouTube Video:** [Watch Here]({link})\n"
+                elif "instagram" in link:
+                    formatted_links += f"- 🍕 **Instagram Reels:** [View Here]({link})\n"
+                elif "maps" in link:
+                    formatted_links += f"- 🗺️ **Google Maps:** [Location]({link})\n"
+                else:
+                    formatted_links += f"- 🔗 [Link]({link})\n"
+
+            # Formatting the Summary
             formatted_summary = f"""
             📌 **Key Topics Discussed**
-            """ + "\n".join(f"- {topic}" for topic in keywords) + """
+            """ + "\n".join(f"- {topic}" for topic in keywords) + f"""
 
             🗣 **Important Conversations**
-            """ + "\n".join(f"- 📅 *[{date.strftime('%I:%M %p') if hasattr(date, 'strftime') else date}]* {msg}" for date, msg in important_conversations) + """
+            {formatted_conversations}
 
             😂 **Casual & Fun Talks**
-            """ + "\n".join(f"- {msg}" for msg in fun_messages) + """
+            {formatted_fun_talks}
 
             🔗 **Shared Links**
-            """ + "\n".join(f"- {link}" for link in unique_links[:3]) + """
+            {formatted_links}
 
             📢 **Sentiment Summary**
-            - ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100, 1)}%  
-            - ❌ **Negative Chat:** {round((negative/len(sentiment_scores))*100, 1)}%  
+            - ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100, 1)}% (Casual fun, celebration, study plans)  
+            - ❌ **Negative Chat:** {round((negative/len(sentiment_scores))*100, 1)}% (Lost item, minor conflicts)  
             - ➖ **Neutral Chat:** {round((neutral/len(sentiment_scores))*100, 1)}%  
 
-            📊 **Overall Mood:** {"Positive & Friendly 🎉" if positive > negative else "Mixed / Slightly Negative 😐"}
+            📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if positive > negative else "**Mixed / Slightly Negative 😐**"}
             """
 
             # Display Summary in Streamlit
             st.title(":blue[Chat Summary]")
             st.markdown(formatted_summary, unsafe_allow_html=True)
 
-
+            # Print Summary to CMD for Debugging
+            print("\n=== Chat Summary ===")
+            print(formatted_summary)
 
         else:
             st.write(":red[No messages found in the selected date range]")
+
