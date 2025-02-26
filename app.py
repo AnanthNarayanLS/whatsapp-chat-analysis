@@ -192,6 +192,14 @@ nltk.download('vader_lexicon')
 from rake_nltk import Rake  # For extracting key topics
 from nltk.sentiment import SentimentIntensityAnalyzer  # VADER for emotion detection
 
+# Ensure the correct path for NLTK data
+nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
+nltk.data.path.append(nltk_data_path)
+
+# Force-download necessary tokenizers
+nltk.download('punkt', download_dir=nltk_data_path)
+nltk.download('punkt_tab', download_dir=nltk_data_path)  # Fix for missing `punkt_tab`
+
 
 
 
