@@ -340,7 +340,6 @@ nltk.download('stopwords')
 nltk.download('vader_lexicon')
 from rake_nltk import Rake  # For extracting key topics
 from nltk.sentiment import SentimentIntensityAnalyzer  # VADER for emotion detection
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 
 # Ensure the correct path for NLTK data
@@ -573,18 +572,16 @@ if uploaded_file is not None:
 
             # ✅ **Format Summary Output (Point-wise)**
             formatted_summary = f"""
-    
+            📝 
+            {final_summary}
 
-    📝 
-    {final_summary}
+            📢 **Sentiment Summary**
+            - ✅ **Positive Chat:** {pos_pct}%
+            - ❌ **Negative Chat:** {neg_pct}%
+            - ➖ **Neutral Chat:** {neu_pct}%
 
-    📢 **Sentiment Summary**
-    - ✅ **Positive Chat:** {pos_pct}%
-    - ❌ **Negative Chat:** {neg_pct}%
-    - ➖ **Neutral Chat:** {neu_pct}%
-
-    📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if pos_pct > neg_pct else "**Mixed / Slightly Negative 😐**"}
-    """
+            📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if pos_pct > neg_pct else "**Mixed / Slightly Negative 😐**"}
+            """
 
             st.title(":blue[Chat Summary]")
             st.markdown(formatted_summary, unsafe_allow_html=True)
