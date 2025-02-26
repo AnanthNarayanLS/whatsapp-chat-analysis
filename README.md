@@ -2,6 +2,7 @@
 
 ## 🌐 Live Demo  
 🔗 **Try it here:** [WhatsApp Chat Analyzer](https://whatsapp-chat-analysis-01.streamlit.app/)  
+    [if it doesn't work try copying the link and then opening it in a new tab or use incognito]
 
 ## 📖 Overview  
 A Streamlit-based WhatsApp Chat Analysis tool that provides detailed insights into WhatsApp conversations. It includes:  
