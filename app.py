@@ -218,27 +218,29 @@ if uploaded_file is not None:
 
 
     # Summarization Section
-    # Summarization Section
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= str(start_date)) & (df['date'] <= str(end_date))]
 
         if not filtered_df.empty:
             chat_text = " ".join(filtered_df['message'])
 
-            # Remove media messages
+            # Remove media messages & deleted messages
             chat_text = chat_text.replace("<Media omitted>", "").replace("This message was deleted", "")
 
             # Summarization using TextRank
             parser = PlaintextParser.from_string(chat_text, Tokenizer("english"))
             summarizer = TextRankSummarizer()
             summary = summarizer(parser.document, 5)  # Generate 5 summary sentences
-            
             summarized_sentences = [str(sentence) for sentence in summary]
 
-            # Extract keywords using RAKE
+            # Extract keywords using RAKE (Filter out garbage text)
             rake = Rake()
             rake.extract_keywords_from_text(chat_text)
-            keywords = rake.get_ranked_phrases()[:5]  # Get top 5 keywords
+            keywords = [kw for kw in rake.get_ranked_phrases() if len(kw) > 3][:5]  # Remove short/random words
+
+            # Extract Links Separately
+            links = [msg for msg in filtered_df['message'] if "http" in msg]
+            unique_links = list(set(links))  # Remove duplicate links
 
             # Sentiment Analysis for Summary
             sia = SentimentIntensityAnalyzer()
@@ -247,6 +249,10 @@ if uploaded_file is not None:
             negative = sum(1 for score in sentiment_scores if score < -0.2)
             neutral = len(sentiment_scores) - positive - negative
 
+            # Categorizing Messages
+            fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg]
+            important_conversations = filtered_df.head(5)['message'].tolist()  # First 5 important messages
+
             # Formatting the Summary
             formatted_summary = f"""
             📌 **Key Topics Discussed**
@@ -254,6 +260,12 @@ if uploaded_file is not None:
 
             🗣 **Important Conversations**
             """ + "\n".join(f"- {sentence}" for sentence in summarized_sentences) + f"""
+
+            😂 **Casual & Fun Talks**
+            - {", ".join(fun_messages[:5])}...
+
+            🔗 **Shared Links**
+            """ + "\n".join(f"- {link}" for link in unique_links[:3]) + f"""
 
             📢 **Sentiment Summary**
             ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100, 1)}%  
@@ -273,3 +285,4 @@ if uploaded_file is not None:
 
         else:
             st.write(":red[No messages found in the selected date range]")
+
