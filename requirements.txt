@@ -5,3 +5,4 @@ seaborn
 nltk
 sumy
 rake-nltk
+urlextract
