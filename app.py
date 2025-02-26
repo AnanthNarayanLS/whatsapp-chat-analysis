@@ -326,7 +326,6 @@ if uploaded_file is not None:
 
 import os
 import pandas as pd
-import sklearn
 from transformers import pipeline  
 import streamlit as st
 import preprocessor, helper
