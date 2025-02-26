@@ -557,7 +557,7 @@ if uploaded_file is not None:
 
 
             try:
-                summarizer = pipeline("summarization", model="t5-base")
+                summarizer = pipeline("summarization", model="t5-small")
             except Exception as e:
                 print(f"Error loading model: {e}")
                 summarizer = None

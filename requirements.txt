@@ -10,3 +10,4 @@ wordcloud
 emoji
 transformers
 sentencepiece
+torch  
