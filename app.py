@@ -326,6 +326,7 @@ if uploaded_file is not None:
 
 import os
 import pandas as pd
+from sklearn import pipeline
 import streamlit as st
 import preprocessor, helper
 import matplotlib.pyplot as plt
@@ -339,6 +340,8 @@ nltk.download('stopwords')
 nltk.download('vader_lexicon')
 from rake_nltk import Rake  # For extracting key topics
 from nltk.sentiment import SentimentIntensityAnalyzer  # VADER for emotion detection
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
 
 # Ensure the correct path for NLTK data
 nltk_data_path = os.path.join(os.getcwd(), "nltk_data")
@@ -551,7 +554,14 @@ if uploaded_file is not None:
             chat_text = " ".join(filtered_df['message']).replace("<Media omitted>", "").replace("This message was deleted", "")
             
             # Transformer-based Summarization
-            summarizer = pipeline("summarization", model="t5-base")
+
+
+            try:
+                summarizer = pipeline("summarization", model="t5-base")
+            except Exception as e:
+                print(f"Error loading model: {e}")
+                summarizer = None
+
             transformer_summary = summarizer(chat_text, max_length=150, min_length=40, do_sample=False)
             summarized_text = transformer_summary[0]['summary_text']
             
