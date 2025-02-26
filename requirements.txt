@@ -8,3 +8,5 @@ rake-nltk
 urlextract
 wordcloud
 emoji
+transformers
+sentencepiece
