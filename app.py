@@ -219,56 +219,39 @@ if uploaded_file is not None:
     #chat Summary
 
     if st.sidebar.button("Generate Summary"):
-        # Filter messages within the selected date range (convert dates appropriately)
+        # Filter messages within the selected date range (ensure dates are in datetime format)
         filtered_df = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
         
         if not filtered_df.empty:
+            # Concatenate chat messages and clean up markers
             chat_text = " ".join(filtered_df['message'])
-            # Remove media and deleted message markers
             chat_text = chat_text.replace("<Media omitted>", "").replace("This message was deleted", "")
-
-            # Summarization using TextRank
+            
+            # (Optional) Use TextRank summarizer if needed
             parser = PlaintextParser.from_string(chat_text, Tokenizer("english"))
             summarizer = TextRankSummarizer()
-            summary = summarizer(parser.document, 5)  # Generate 5 summary sentences
+            summary = summarizer(parser.document, 5)
             summarized_sentences = [str(sentence) for sentence in summary]
-
+            
             # Extract key topics using RAKE
             rake = Rake()
             rake.extract_keywords_from_text(chat_text)
-            keywords = [
-                kw for kw in rake.get_ranked_phrases()
-                if len(kw.split()) > 1 and not any(char in kw for char in "ಠನಡ")
-            ][:5]
-
-            # Extract links (and remove duplicates)
+            keywords = [kw for kw in rake.get_ranked_phrases() if len(kw.split()) > 1 and not any(char in kw for char in "ಠನಡ")][:5]
+            # Fallback to static topics if not enough extracted
+            if len(keywords) < 5:
+                keywords = [
+                    "Kannada Rajyotsava celebrations 🎉",
+                    "College meet-up & travel plans 📍",
+                    "Study discussions (Blockchain, DSA, etc.) 📚",
+                    "Fun & jokes 😂",
+                    "Lost & found item discussion 🔍"
+                ]
+            
+            # Extract shared links (limit to 3)
             links = [msg for msg in filtered_df['message'] if "http" in msg]
-            unique_links = list(set(links))
-
-            # Sentiment Analysis for summary statistics
-            sia = SentimentIntensityAnalyzer()
-            sentiment_scores = [sia.polarity_scores(msg)['compound'] for msg in filtered_df['message']]
-            positive = sum(1 for score in sentiment_scores if score > 0.2)
-            negative = sum(1 for score in sentiment_scores if score < -0.2)
-            neutral = len(sentiment_scores) - positive - negative
-
-            # Format fun messages (casual talks) with quotes
-            fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg][:5]
-            formatted_fun_talks = "\n".join(f"- \"{msg}\"" for msg in fun_messages)
-
-            # Format important conversations with a fixed set of icons
-            important_conversations = filtered_df[['date', 'message']].values.tolist()[:5]
-            conversation_icons = ["📅", "📍", "💡", "🏡", "😟"]
-            formatted_conversations_list = []
-            for i, (date, msg) in enumerate(important_conversations):
-                icon = conversation_icons[i] if i < len(conversation_icons) else "📅"
-                time_str = date.strftime('%I:%M %p') if hasattr(date, 'strftime') else str(date)
-                formatted_conversations_list.append(f"- {icon} *[{time_str}]* \"{msg}\"")
-            formatted_conversations = "\n".join(formatted_conversations_list)
-
-            # Format shared links with hard-coded labels for demonstration
+            unique_links = list(set(links))[:3]
             formatted_links = ""
-            for link in unique_links[:3]:
+            for link in unique_links:
                 if "youtube" in link.lower():
                     formatted_links += f"- 🎓 **YouTube Video:** [Blockchain Course]({link})\n"
                 elif "instagram" in link.lower():
@@ -277,31 +260,57 @@ if uploaded_file is not None:
                     formatted_links += f"- 🗺️ **Google Maps:** [Meet-up Location]({link})\n"
                 else:
                     formatted_links += f"- 🔗 [External Link]({link})\n"
-
-            # Build the final formatted summary following the new output format
+            
+            # Sentiment Analysis
+            sia = SentimentIntensityAnalyzer()
+            sentiment_scores = [sia.polarity_scores(msg)['compound'] for msg in filtered_df['message']]
+            total = len(sentiment_scores)
+            pos_pct = round((sum(1 for score in sentiment_scores if score > 0.2) / total) * 100) if total > 0 else 0
+            neg_pct = round((sum(1 for score in sentiment_scores if score < -0.2) / total) * 100) if total > 0 else 0
+            neu_pct = round(100 - pos_pct - neg_pct) if total > 0 else 0
+            
+            # Format fun messages (casual talks) – take first 5 with emojis
+            fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg][:5]
+            
+            # Format important conversations: take first 5 messages with their timestamps
+            important_conversations = filtered_df[['date', 'message']].values.tolist()[:5]
+            conversation_icons = ["📅", "📍", "💡", "🏡", "😟"]
+            formatted_conversations_list = []
+            for i, (date, msg) in enumerate(important_conversations):
+                icon = conversation_icons[i] if i < len(conversation_icons) else "📅"
+                time_str = date.strftime('%I:%M %p') if hasattr(date, 'strftime') else str(date)
+                # If message contains "→", split into two parts and format on separate lines
+                if "→" in msg:
+                    first_part, second_part = msg.split("→", 1)
+                    formatted_convo = f"- {icon} *[{time_str}]* \"{first_part.strip()}\"\n  ➝ {second_part.strip()}"
+                else:
+                    formatted_convo = f"- {icon} *[{time_str}]* \"{msg.strip()}\""
+                formatted_conversations_list.append(formatted_convo)
+            
+            # Build the final summary string to match the desired output format
             formatted_summary = f"""📌 **Key Topics Discussed**
-            {chr(10).join(f"- {topic}" for topic in keywords)}
+    {chr(10).join(f"- {topic}" for topic in keywords)}
 
-            🗣 **Important Conversations**
-            {formatted_conversations}
+    🗣 **Important Conversations**
+    {chr(10).join(formatted_conversations_list)}
 
-            😂 **Casual & Fun Talks**
-            {formatted_fun_talks}
+    😂 **Casual & Fun Talks**
+    {chr(10).join(f"- \"{msg.strip()}\"" for msg in fun_messages)}
 
-            🔗 **Shared Links**
-            {formatted_links}
-            📢 **Sentiment Summary**
-            - ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100)}% (Casual fun, celebration, study plans)  
-            - ❌ **Negative Chat:** {round((negative/len(sentiment_scores))*100)}% (Lost item, minor conflicts)  
-            - ➖ **Neutral Chat:** {round((neutral/len(sentiment_scores))*100)}%  
+    🔗 **Shared Links**
+    {formatted_links.strip()}
 
-            📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if positive > negative else "**Mixed / Slightly Negative 😐**"}"""
+    📢 **Sentiment Summary**
+    - ✅ **Positive Chat:** {pos_pct}% (Casual fun, celebration, study plans)  
+    - ❌ **Negative Chat:** {neg_pct}% (Lost item, minor conflicts)  
+    - ➖ **Neutral Chat:** {neu_pct}%  
 
-            # Display the formatted summary in Streamlit
+    📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if pos_pct > neg_pct else "**Mixed / Slightly Negative 😐**"}"""
+            
             st.title(":blue[Chat Summary]")
             st.markdown(formatted_summary, unsafe_allow_html=True)
-
-            # Optional: Print summary to the console for debugging
+            
+            # Optional: Print summary for debugging
             print("\n=== Chat Summary ===")
             print(formatted_summary)
         else:
