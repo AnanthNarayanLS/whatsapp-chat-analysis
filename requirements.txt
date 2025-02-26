@@ -6,3 +6,4 @@ nltk
 sumy
 rake-nltk
 urlextract
+wordcloud
