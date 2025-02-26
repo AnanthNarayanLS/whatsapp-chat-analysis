@@ -1,7 +1,7 @@
 streamlit
+pandas
 matplotlib
 seaborn
-urlextract
-wordcloud
-pandas
-emoji
+nltk
+sumy
+rake-nltk
