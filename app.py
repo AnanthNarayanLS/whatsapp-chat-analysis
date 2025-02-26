@@ -573,8 +573,7 @@ if uploaded_file is not None:
 
             # ✅ **Format Summary Output (Point-wise)**
             formatted_summary = f"""
-    📌 **Key Topics Discussed**
-    {chr(10).join(f"- {topic}" for topic in keywords)}
+    
 
     📝 **Chat Summary (Point-wise)**
     {final_summary}
