@@ -575,7 +575,7 @@ if uploaded_file is not None:
             formatted_summary = f"""
     
 
-    📝 **Chat Summary (Point-wise)**
+    📝 
     {final_summary}
 
     📢 **Sentiment Summary**
