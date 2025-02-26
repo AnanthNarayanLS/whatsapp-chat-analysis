@@ -217,7 +217,7 @@ if uploaded_file is not None:
 
 
 
-    # Summarization Section
+        # Summarization Section
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= str(start_date)) & (df['date'] <= str(end_date))]
 
@@ -250,27 +250,27 @@ if uploaded_file is not None:
             neutral = len(sentiment_scores) - positive - negative
 
             # Categorizing Messages
-            fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg]
-            important_conversations = filtered_df.head(5)['message'].tolist()  # First 5 important messages
+            fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg][:5]
+            important_conversations = filtered_df.head(5)[['date', 'message']].values.tolist()  # First 5 important messages
 
             # Formatting the Summary
             formatted_summary = f"""
             📌 **Key Topics Discussed**
-            - {", ".join(keywords)}
+            """ + "\n".join(f"- {topic}" for topic in keywords) + """
 
             🗣 **Important Conversations**
-            """ + "\n".join(f"- {sentence}" for sentence in summarized_sentences) + f"""
+            """ + "\n".join(f"- 📅 *[{date.strftime('%I:%M %p') if hasattr(date, 'strftime') else date}]* {msg}" for date, msg in important_conversations) + """
 
             😂 **Casual & Fun Talks**
-            - {", ".join(fun_messages[:5])}...
+            """ + "\n".join(f"- {msg}" for msg in fun_messages) + """
 
             🔗 **Shared Links**
-            """ + "\n".join(f"- {link}" for link in unique_links[:3]) + f"""
+            """ + "\n".join(f"- {link}" for link in unique_links[:3]) + """
 
             📢 **Sentiment Summary**
-            ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100, 1)}%  
-            ❌ **Negative Chat:** {round((negative/len(sentiment_scores))*100, 1)}%  
-            ➖ **Neutral Chat:** {round((neutral/len(sentiment_scores))*100, 1)}%  
+            - ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100, 1)}%  
+            - ❌ **Negative Chat:** {round((negative/len(sentiment_scores))*100, 1)}%  
+            - ➖ **Neutral Chat:** {round((neutral/len(sentiment_scores))*100, 1)}%  
 
             📊 **Overall Mood:** {"Positive & Friendly 🎉" if positive > negative else "Mixed / Slightly Negative 😐"}
             """
@@ -285,4 +285,3 @@ if uploaded_file is not None:
 
         else:
             st.write(":red[No messages found in the selected date range]")
-
