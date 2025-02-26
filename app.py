@@ -186,6 +186,9 @@ from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.text_rank import TextRankSummarizer  # Improved TextRank summarization
 import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('vader_lexicon')
 from rake_nltk import Rake  # For extracting key topics
 from nltk.sentiment import SentimentIntensityAnalyzer  # VADER for emotion detection
 
