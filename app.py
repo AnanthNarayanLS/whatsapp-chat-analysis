@@ -549,58 +549,44 @@ if uploaded_file is not None:
     import textwrap
 
     # Chat Summary with Transformer-based Summarization
+    # Chat Summary with Sumy Summarization (No PyTorch/TensorFlow required)
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
-        
+
         if not filtered_df.empty:
             chat_text = " ".join(filtered_df['message']).replace("<Media omitted>", "").replace("This message was deleted", "")
 
-            # Function to split long text into chunks
-            def chunk_text(text, max_length=500):
-                """Splits long text into smaller chunks of max_length."""
-                return textwrap.wrap(text, max_length)
+            # 🔹 **Use Sumy for Summarization (No GPU/Heavy Models)**
+            parser = PlaintextParser.from_string(chat_text, Tokenizer("english"))
+            summarizer = TextRankSummarizer()  # Simpler than T5, No TensorFlow/PyTorch needed
+            summary_sentences = summarizer(parser.document, 5)  # Limit to 5 key sentences
+            final_summary = " ".join(str(sentence) for sentence in summary_sentences)
 
-            text_chunks = chunk_text(chat_text, max_length=500)
-
-            # Transformer-based Summarization
-            try:
-                summarizer = pipeline("summarization", model="t5-small")
-            except Exception as e:
-                print(f"Error loading model: {e}")
-                summarizer = None
-
-            summarized_text = []
-            for chunk in text_chunks:
-                summary = summarizer(chunk, max_length=150, min_length=40, do_sample=False)[0]["summary_text"]
-                summarized_text.append(summary)
-
-            final_summary = " ".join(summarized_text)
-
-            # Extract key topics using RAKE
+            # 🔹 **Extract Key Topics using RAKE**
             rake = Rake()
             rake.extract_keywords_from_text(chat_text)
             keywords = [kw for kw in rake.get_ranked_phrases() if len(kw.split()) > 1][:5]
 
-            # Sentiment Analysis
+            # 🔹 **Sentiment Analysis**
             sia = SentimentIntensityAnalyzer()
             sentiment_scores = [sia.polarity_scores(msg)['compound'] for msg in filtered_df['message']]
             pos_pct = round((sum(1 for score in sentiment_scores if score > 0.2) / len(sentiment_scores)) * 100, 1)
             neg_pct = round((sum(1 for score in sentiment_scores if score < -0.2) / len(sentiment_scores)) * 100, 1)
             neu_pct = 100 - pos_pct - neg_pct
 
-            # Format Summary Output
+            # 🔹 **Format Summary Output**
             formatted_summary = f"""
             📌 **Key Topics Discussed**
             {chr(10).join(f"- {topic}" for topic in keywords)}
-            
+
             📝 **Chat Summary**
             {final_summary}
-            
+
             📢 **Sentiment Summary**
             - ✅ **Positive Chat:** {pos_pct}%
             - ❌ **Negative Chat:** {neg_pct}%
             - ➖ **Neutral Chat:** {neu_pct}%
-            
+
             📊 **Overall Mood:** {"**Positive & Friendly 🎉**" if pos_pct > neg_pct else "**Mixed / Slightly Negative 😐**"}
             """
 
