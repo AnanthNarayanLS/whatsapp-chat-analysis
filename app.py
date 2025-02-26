@@ -218,6 +218,7 @@ if uploaded_file is not None:
 
 
         # Summarization Section
+        # Summarization Section
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= str(start_date)) & (df['date'] <= str(end_date))]
 
@@ -236,7 +237,7 @@ if uploaded_file is not None:
             # Extract keywords using RAKE (Filter out garbage text)
             rake = Rake()
             rake.extract_keywords_from_text(chat_text)
-            keywords = [kw for kw in rake.get_ranked_phrases() if len(kw.split()) > 1][:5]  # Remove single-character words
+            keywords = [kw for kw in rake.get_ranked_phrases() if len(kw.split()) > 1 and not any(char in kw for char in "ಠನಡ")][:5]  # Remove single-character words & non-English text
 
             # Extract Links Separately
             links = [msg for msg in filtered_df['message'] if "http" in msg]
@@ -271,7 +272,7 @@ if uploaded_file is not None:
                 elif "maps" in link:
                     formatted_links += f"- 🗺️ **Google Maps:** [Location]({link})\n"
                 else:
-                    formatted_links += f"- 🔗 [Link]({link})\n"
+                    formatted_links += f"- 🔗 [External Link]({link})\n"
 
             # Formatting the Summary
             formatted_summary = f"""
@@ -305,4 +306,3 @@ if uploaded_file is not None:
 
         else:
             st.write(":red[No messages found in the selected date range]")
-
