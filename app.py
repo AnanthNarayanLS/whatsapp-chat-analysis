@@ -253,7 +253,6 @@ if uploaded_file is not None:
             fun_messages = [msg for msg in filtered_df['message'] if "😂" in msg or "🤣" in msg][:5]
             important_conversations = filtered_df.head(5)[['date', 'message']].values.tolist()  # First 5 important messages
 
-            # Formatting the Summary
             formatted_summary = f"""
             📌 **Key Topics Discussed**
             """ + "\n".join(f"- {topic}" for topic in keywords) + """
@@ -277,11 +276,9 @@ if uploaded_file is not None:
 
             # Display Summary in Streamlit
             st.title(":blue[Chat Summary]")
-            st.markdown(formatted_summary)
+            st.markdown(formatted_summary, unsafe_allow_html=True)
 
-            # Print Summary to CMD for Debugging
-            print("\n=== Chat Summary ===")
-            print(formatted_summary)
+
 
         else:
             st.write(":red[No messages found in the selected date range]")
