@@ -218,6 +218,7 @@ if uploaded_file is not None:
 
 
     # Summarization Section
+    # Summarization Section
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= str(start_date)) & (df['date'] <= str(end_date))]
 
@@ -225,7 +226,7 @@ if uploaded_file is not None:
             chat_text = " ".join(filtered_df['message'])
 
             # Remove media messages
-            chat_text = chat_text.replace("<Media omitted>", "")
+            chat_text = chat_text.replace("<Media omitted>", "").replace("This message was deleted", "")
 
             # Summarization using TextRank
             parser = PlaintextParser.from_string(chat_text, Tokenizer("english"))
@@ -239,10 +240,30 @@ if uploaded_file is not None:
             rake.extract_keywords_from_text(chat_text)
             keywords = rake.get_ranked_phrases()[:5]  # Get top 5 keywords
 
-            # Format Summary
-            formatted_summary = "**📌 Key Topics:**\n" + ", ".join(keywords) + "\n\n**📝 Chat Summary:**\n" + "\n".join(f"- {sentence}" for sentence in summarized_sentences)
+            # Sentiment Analysis for Summary
+            sia = SentimentIntensityAnalyzer()
+            sentiment_scores = [sia.polarity_scores(msg)['compound'] for msg in filtered_df['message']]
+            positive = sum(1 for score in sentiment_scores if score > 0.2)
+            negative = sum(1 for score in sentiment_scores if score < -0.2)
+            neutral = len(sentiment_scores) - positive - negative
 
-            # Display Summary
+            # Formatting the Summary
+            formatted_summary = f"""
+            📌 **Key Topics Discussed**
+            - {", ".join(keywords)}
+
+            🗣 **Important Conversations**
+            """ + "\n".join(f"- {sentence}" for sentence in summarized_sentences) + f"""
+
+            📢 **Sentiment Summary**
+            ✅ **Positive Chat:** {round((positive/len(sentiment_scores))*100, 1)}%  
+            ❌ **Negative Chat:** {round((negative/len(sentiment_scores))*100, 1)}%  
+            ➖ **Neutral Chat:** {round((neutral/len(sentiment_scores))*100, 1)}%  
+
+            📊 **Overall Mood:** {"Positive & Friendly 🎉" if positive > negative else "Mixed / Slightly Negative 😐"}
+            """
+
+            # Display Summary in Streamlit
             st.title(":blue[Chat Summary]")
             st.markdown(formatted_summary)
 
