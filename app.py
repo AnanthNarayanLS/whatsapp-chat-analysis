@@ -549,32 +549,32 @@ if uploaded_file is not None:
     import textwrap
 
     # Chat Summary with Transformer-based Summarization
-    # Chat Summary with Sumy Summarization (No PyTorch/TensorFlow required)
+    # Chat Summary with Sumy Summarization (No PyTorch/TensorFlow needed)
     if st.sidebar.button("Generate Summary"):
         filtered_df = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
 
         if not filtered_df.empty:
             chat_text = " ".join(filtered_df['message']).replace("<Media omitted>", "").replace("This message was deleted", "")
 
-            # 🔹 **Use Sumy for Summarization (No GPU/Heavy Models)**
+            # ✅ **Use Sumy (TextRank) for Summarization**
             parser = PlaintextParser.from_string(chat_text, Tokenizer("english"))
-            summarizer = TextRankSummarizer()  # Simpler than T5, No TensorFlow/PyTorch needed
-            summary_sentences = summarizer(parser.document, 5)  # Limit to 5 key sentences
+            summarizer = TextRankSummarizer()
+            summary_sentences = summarizer(parser.document, 5)  # Get top 5 key sentences
             final_summary = " ".join(str(sentence) for sentence in summary_sentences)
 
-            # 🔹 **Extract Key Topics using RAKE**
+            # ✅ **Extract Key Topics using RAKE**
             rake = Rake()
             rake.extract_keywords_from_text(chat_text)
             keywords = [kw for kw in rake.get_ranked_phrases() if len(kw.split()) > 1][:5]
 
-            # 🔹 **Sentiment Analysis**
+            # ✅ **Sentiment Analysis**
             sia = SentimentIntensityAnalyzer()
             sentiment_scores = [sia.polarity_scores(msg)['compound'] for msg in filtered_df['message']]
             pos_pct = round((sum(1 for score in sentiment_scores if score > 0.2) / len(sentiment_scores)) * 100, 1)
             neg_pct = round((sum(1 for score in sentiment_scores if score < -0.2) / len(sentiment_scores)) * 100, 1)
             neu_pct = 100 - pos_pct - neg_pct
 
-            # 🔹 **Format Summary Output**
+            # ✅ **Format Summary Output**
             formatted_summary = f"""
             📌 **Key Topics Discussed**
             {chr(10).join(f"- {topic}" for topic in keywords)}
